@@ -1,0 +1,8 @@
+IO
+   面向流(Stream Oriented)
+   阻塞式IO(Blocking  IO)
+
+NIO
+    面向缓冲区(Buffer Oriented)
+    非阻塞式IO(Non Blocking IO)
+    选择器(Seletctors)
