@@ -1,0 +1,4 @@
+Java NIO 俗称 New IO 有叫做 Non Blocking IO 非阻塞式IO
+是从Java1.4版本开始引入的一个新的IO API，可以代替标准的Java IO API
+NIO与原来的IO有同样的作用和目睹，但是使用的方式完全不同
+NIO支持面向缓冲区的，基于通道的IO操作，NIO将以更加高效的方式进行文件的读写操作
