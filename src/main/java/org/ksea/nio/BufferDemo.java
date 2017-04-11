@@ -1,4 +1,4 @@
-package org.ksea.nio.buffer;
+package org.ksea.nio;
 
 import org.junit.Test;
 
