@@ -23,6 +23,10 @@ public class SocketNonBlockingTest {
         //获取客户端网络通道
         SocketChannel socketChannel = SocketChannel.open(new InetSocketAddress("127.0.0.1", 8888));
 
+        //切换非阻塞模式
+        socketChannel.configureBlocking(false);
+
+
         //分配缓冲区
         ByteBuffer byteBuffer = ByteBuffer.allocate(2014);
 
@@ -32,7 +36,7 @@ public class SocketNonBlockingTest {
 
         //将数据写入到服务端
         socketChannel.write(byteBuffer);
-
+        byteBuffer.clear();
         //关闭资源
         socketChannel.close();
 
@@ -45,11 +49,8 @@ public class SocketNonBlockingTest {
         //绑定应用程序端口
         serverSocketChannel.bind(new InetSocketAddress(8888));
 
-        //转换非阻塞模式
+        //切换非阻塞模式
         serverSocketChannel.configureBlocking(false);
-
-        //分配缓冲区
-        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
 
         //获取选择器
         Selector selector = Selector.open();
@@ -64,20 +65,50 @@ public class SocketNonBlockingTest {
          * 当有多个选项用 |进行连接
          * */
         SelectionKey selectionKey = serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-        //获取所有的在选择器selector中选中的key
-        Iterator<SelectionKey> selectionKeyIterator = selector.selectedKeys().iterator();
-        while (selectionKeyIterator.hasNext()) {
-            SelectionKey key = selectionKeyIterator.next();
+        //轮询式获取选择器上已经"准备就绪"的时间
+        while (selector.select() > 0) {
+            //获取当前选择器中所有注册的选择键(已就绪的监听事件)
+            Iterator<SelectionKey> selectionKeyIterator = selector.selectedKeys().iterator();
+            while (selectionKeyIterator.hasNext()) {
+                //获取准备就绪的事件
+                SelectionKey key = selectionKeyIterator.next();
             /*
             * key.isAcceptable() //是否是监听
             * key.isConnectable() //是否是连接
             * key.isReadable() //是否是读
             * key.isWritable() //是否是写
             * */
-            if (key.isAcceptable()) {
-                SocketChannel socketChannel = serverSocketChannel.accept();
+                //判断是什么事件已经准备就绪
+                if (key.isAcceptable()) {
+                    //若"接受就绪",获取客户端链接
+                    SocketChannel socketChannel = serverSocketChannel.accept();
+                    //切换非阻塞模式
+                    socketChannel.configureBlocking(false);
+                    //将该通道注册到选择器上
+                    socketChannel.register(selector, SelectionKey.OP_READ);
+                } else if (key.isReadable()) {
+                    //获取当前选择器上"读就绪"状态的通道
+                    SocketChannel clientSockentChannel = (SocketChannel) key.channel();
+
+                    //读取数据 分配缓冲区
+                    ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+
+                    int len = 0;
+                    while ((len = clientSockentChannel.read(byteBuffer)) > 0) {
+                        //转换模式
+                        byteBuffer.flip();
+                        //获取数据并打印
+                        System.out.println(new String(byteBuffer.array(), 0, len));
+                        ;
+                        byteBuffer.clear();
+                    }
+                }
+
+                //取消选择键
+                selectionKeyIterator.remove();
             }
         }
+
 
     }
 }
